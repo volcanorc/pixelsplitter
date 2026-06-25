@@ -1,6 +1,4 @@
 const TILE = 32;
-const MIN_IMAGE_SIZE = 1;
-const MAX_IMAGE_SIZE = 8192;
 const SURFACE_PAD = 420;
 
 const elements = {
@@ -11,10 +9,8 @@ const elements = {
   emptyState: document.getElementById("emptyState"),
   imageSize: document.getElementById("imageSize"),
   currentImageSize: document.getElementById("currentImageSize"),
-  pendingImageSize: document.getElementById("pendingImageSize"),
   tileCount: document.getElementById("tileCount"),
   exportSize: document.getElementById("exportSize"),
-  resizeImageBtn: document.getElementById("resizeImageBtn"),
   downloadBtn: document.getElementById("downloadBtn"),
   maxBtn: document.getElementById("maxBtn"),
   centerBtn: document.getElementById("centerBtn"),
@@ -43,26 +39,18 @@ const state = {
 const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
 const snapTile = (value) => Math.max(TILE, Math.floor(value / TILE) * TILE);
 
-function isPendingResize() {
-  return Boolean(state.image) && (
-    state.imageRect.w !== state.image.width ||
-    state.imageRect.h !== state.image.height
-  );
-}
-
 function getImageWidth() {
-  return Math.max(MIN_IMAGE_SIZE, Math.round(state.imageRect.w));
+  return state.image ? state.image.width : 0;
 }
 
 function getImageHeight() {
-  return Math.max(MIN_IMAGE_SIZE, Math.round(state.imageRect.h));
+  return state.image ? state.image.height : 0;
 }
 
 function setControlsEnabled(enabled) {
   elements.downloadBtn.disabled = !enabled;
   elements.maxBtn.disabled = !enabled;
   elements.centerBtn.disabled = !enabled;
-  elements.resizeImageBtn.disabled = !enabled;
   Object.values(elements.inputs).forEach((input) => {
     input.disabled = !enabled;
   });
@@ -101,10 +89,6 @@ function syncControls() {
   elements.currentImageSize.textContent = state.image
     ? `${state.image.width} x ${state.image.height} px`
     : "0 x 0 px";
-  elements.pendingImageSize.textContent = isPendingResize()
-    ? `${getImageWidth()} x ${getImageHeight()} px`
-    : "None";
-  elements.resizeImageBtn.disabled = !state.image || !isPendingResize();
   elements.tileCount.textContent = `${columns} x ${rows} = ${columns * rows}`;
   elements.exportSize.textContent = `${w} x ${h} px`;
 
@@ -203,7 +187,6 @@ function draw() {
 
   drawGrid(sx, sy, w, h);
   drawSelectionBorder(sx, sy, w, h);
-  drawImageResizeBorder();
 }
 
 function drawCanvasBackdrop() {
@@ -292,14 +275,24 @@ function drawGrid(x, y, w, h) {
 
 function drawSelectionBorder(x, y, w, h) {
   ctx.save();
-  ctx.strokeStyle = "#5da7ff";
-  ctx.lineWidth = 2;
-  ctx.strokeRect(x + 1, y + 1, Math.max(0, w - 2), Math.max(0, h - 2));
+  const maxW = Math.floor(getImageWidth() / TILE) * TILE;
+  const maxH = Math.floor(getImageHeight() / TILE) * TILE;
+  const horizontalColor = w >= maxW ? "#ffd166" : "#6ee7b7";
+  const verticalColor = h >= maxH ? "#ffd166" : "#6ee7b7";
+
+  ctx.lineWidth = 3;
+  ctx.strokeStyle = horizontalColor;
+  crispLine(x, y, x + w, y);
+  crispLine(x, y + h, x + w, y + h);
+
+  ctx.strokeStyle = verticalColor;
+  crispLine(x, y, x, y + h);
+  crispLine(x + w, y, x + w, y + h);
 
   ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
-  ctx.setLineDash([6, 4]);
+  ctx.setLineDash([5, 5]);
   ctx.lineWidth = 1;
-  ctx.strokeRect(x + 4, y + 4, Math.max(0, w - 8), Math.max(0, h - 8));
+  ctx.strokeRect(x + 5, y + 5, Math.max(0, w - 10), Math.max(0, h - 10));
   ctx.setLineDash([]);
 
   ctx.fillStyle = "#6ee7b7";
@@ -308,26 +301,6 @@ function drawSelectionBorder(x, y, w, h) {
   getSelectionHandles().forEach((handle) => {
     ctx.fillRect(handle.x - 4, handle.y - 4, 8, 8);
     ctx.strokeRect(handle.x - 4, handle.y - 4, 8, 8);
-  });
-  ctx.restore();
-}
-
-function drawImageResizeBorder() {
-  const { x, y, w, h } = state.imageRect;
-
-  ctx.save();
-  ctx.strokeStyle = isPendingResize() ? "#ffbf69" : "#ff8c6f";
-  ctx.lineWidth = 2;
-  ctx.setLineDash([10, 6]);
-  ctx.strokeRect(x + 1, y + 1, Math.max(0, w - 2), Math.max(0, h - 2));
-  ctx.setLineDash([]);
-
-  ctx.fillStyle = isPendingResize() ? "#ffbf69" : "#ff8c6f";
-  ctx.strokeStyle = "#071016";
-  ctx.lineWidth = 1;
-  getImageHandles().forEach((handle) => {
-    ctx.fillRect(handle.x - 5, handle.y - 5, 10, 10);
-    ctx.strokeRect(handle.x - 5, handle.y - 5, 10, 10);
   });
   ctx.restore();
 }
@@ -351,21 +324,6 @@ function getSelectionHandles() {
   ];
 }
 
-function getImageHandles() {
-  const { x, y, w, h } = state.imageRect;
-  const outside = Math.max(10, 16 / state.zoom);
-  return [
-    { name: "nw", x: x - outside, y: y - outside, cursor: "nwse-resize" },
-    { name: "ne", x: x + w + outside, y: y - outside, cursor: "nesw-resize" },
-    { name: "sw", x: x - outside, y: y + h + outside, cursor: "nesw-resize" },
-    { name: "se", x: x + w + outside, y: y + h + outside, cursor: "nwse-resize" },
-    { name: "n", x: x + w / 2, y: y - outside, cursor: "ns-resize" },
-    { name: "s", x: x + w / 2, y: y + h + outside, cursor: "ns-resize" },
-    { name: "w", x: x - outside, y: y + h / 2, cursor: "ew-resize" },
-    { name: "e", x: x + w + outside, y: y + h / 2, cursor: "ew-resize" }
-  ];
-}
-
 function getPointerPosition(event) {
   const rect = elements.canvas.getBoundingClientRect();
   const scaleX = elements.canvas.width / rect.width;
@@ -378,11 +336,6 @@ function getPointerPosition(event) {
 
 function hitTest(point) {
   const handleRadius = Math.max(6, 12 / state.zoom);
-  const imageHandle = getImageHandles().find((item) => (
-    Math.abs(point.x - item.x) <= handleRadius && Math.abs(point.y - item.y) <= handleRadius
-  ));
-  if (imageHandle) return { type: "image-resize", edge: imageHandle.name, cursor: imageHandle.cursor };
-
   const selectionHandle = getSelectionHandles().find((item) => (
     Math.abs(point.x - item.x) <= handleRadius && Math.abs(point.y - item.y) <= handleRadius
   ));
@@ -435,8 +388,7 @@ function onPointerDown(event) {
     type: hit.type,
     edge: hit.edge,
     start: point,
-    originalSelection: { ...state.selection },
-    originalImageRect: { ...state.imageRect }
+    originalSelection: { ...state.selection }
   };
 }
 
@@ -475,9 +427,6 @@ function onPointerMove(event) {
     return;
   }
 
-  if (state.pointer.type === "image-resize") {
-    resizeImageFromPointer(state.pointer.originalImageRect, state.pointer.edge, dx, dy);
-  }
 }
 
 function resizeSelectionFromPointer(original, edge, dx, dy) {
@@ -502,32 +451,6 @@ function resizeSelectionFromPointer(original, edge, dx, dy) {
   if (edge.includes("n")) y = bottom - h;
 
   setSelection({ x, y, w, h });
-}
-
-function resizeImageFromPointer(original, edge, dx, dy) {
-  let left = original.x;
-  let top = original.y;
-  let right = original.x + original.w;
-  let bottom = original.y + original.h;
-
-  if (edge.includes("w")) left = clamp(original.x + dx, 0, right - MIN_IMAGE_SIZE);
-  if (edge.includes("e")) right = clamp(original.x + original.w + dx, left + MIN_IMAGE_SIZE, elements.canvas.width);
-  if (edge.includes("n")) top = clamp(original.y + dy, 0, bottom - MIN_IMAGE_SIZE);
-  if (edge.includes("s")) bottom = clamp(original.y + original.h + dy, top + MIN_IMAGE_SIZE, elements.canvas.height);
-
-  const nextW = clamp(Math.round(right - left), MIN_IMAGE_SIZE, MAX_IMAGE_SIZE);
-  const nextH = clamp(Math.round(bottom - top), MIN_IMAGE_SIZE, MAX_IMAGE_SIZE);
-  const center = { x: (left + right) / 2, y: (top + bottom) / 2 };
-
-  state.imageRect.w = nextW;
-  state.imageRect.h = nextH;
-  state.imageRect.x = Math.round(center.x - nextW / 2);
-  state.imageRect.y = Math.round(center.y - nextH / 2);
-  resizeSurface(true);
-  buildQuickSizes();
-  state.selection = normalizeSelection(state.selection);
-  syncControls();
-  draw();
 }
 
 function onPointerUp(event) {
@@ -609,25 +532,6 @@ function maxSelection() {
   });
 }
 
-function applyImageResize() {
-  if (!state.image || !isPendingResize()) return;
-
-  const resized = document.createElement("canvas");
-  resized.width = getImageWidth();
-  resized.height = getImageHeight();
-  const resizedCtx = resized.getContext("2d");
-  resizedCtx.imageSmoothingEnabled = false;
-  resizedCtx.drawImage(state.image, 0, 0, resized.width, resized.height);
-
-  state.image = resized;
-  state.imageRect.w = resized.width;
-  state.imageRect.h = resized.height;
-  elements.imageSize.textContent = `${resized.width} x ${resized.height}px`;
-  resizeSurface(true);
-  buildQuickSizes();
-  setSelection(state.selection);
-}
-
 async function downloadTiles() {
   if (!state.image || state.selection.w < TILE || state.selection.h < TILE) return;
 
@@ -651,7 +555,6 @@ async function downloadTiles() {
 }
 
 async function renderTiles() {
-  const source = getExportSource();
   const output = document.createElement("canvas");
   output.width = TILE;
   output.height = TILE;
@@ -666,7 +569,7 @@ async function renderTiles() {
     for (let column = 0; column < columns; column += 1) {
       outputCtx.clearRect(0, 0, TILE, TILE);
       outputCtx.drawImage(
-        source,
+        state.image,
         state.selection.x + column * TILE,
         state.selection.y + row * TILE,
         TILE,
@@ -687,18 +590,6 @@ async function renderTiles() {
   }
 
   return files;
-}
-
-function getExportSource() {
-  if (!isPendingResize()) return state.image;
-
-  const resized = document.createElement("canvas");
-  resized.width = getImageWidth();
-  resized.height = getImageHeight();
-  const resizedCtx = resized.getContext("2d");
-  resizedCtx.imageSmoothingEnabled = false;
-  resizedCtx.drawImage(state.image, 0, 0, resized.width, resized.height);
-  return resized;
 }
 
 function canvasToBlob(canvas) {
@@ -838,7 +729,6 @@ elements.stage.addEventListener("drop", handleDroppedFile);
 Object.values(elements.inputs).forEach((input) => input.addEventListener("change", onInputChange));
 elements.maxBtn.addEventListener("click", maxSelection);
 elements.centerBtn.addEventListener("click", centerSelection);
-elements.resizeImageBtn.addEventListener("click", applyImageResize);
 elements.downloadBtn.addEventListener("click", downloadTiles);
 elements.stage.addEventListener("wheel", (event) => {
   if (!state.image) return;
