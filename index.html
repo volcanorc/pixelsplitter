@@ -1,0 +1,100 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>32x32 Minecraft Image Slicer</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="app-shell">
+    <section class="topbar" aria-label="Image slicer header">
+      <div>
+        <p class="eyebrow">Local tool</p>
+        <h1>32x32 Image Slicer</h1>
+      </div>
+      <button id="downloadBtn" class="primary-action" type="button" disabled>
+        Download ZIP
+      </button>
+    </section>
+
+    <section class="workspace">
+      <aside class="sidebar" aria-label="Controls">
+        <label id="dropZone" class="drop-zone" for="fileInput">
+          <input id="fileInput" type="file" accept="image/png,image/jpeg,image/webp,image/gif">
+          <span class="drop-title">Drop image here</span>
+          <span class="drop-copy">or click to choose a PNG, JPG, WebP, or GIF</span>
+        </label>
+
+        <div class="panel">
+          <div class="panel-title">
+            <h2>Selection</h2>
+            <span id="imageSize">No image</span>
+          </div>
+
+          <div class="field-grid">
+            <label>
+              X
+              <input id="xInput" type="number" min="0" step="1" value="0" disabled>
+            </label>
+            <label>
+              Y
+              <input id="yInput" type="number" min="0" step="1" value="0" disabled>
+            </label>
+            <label>
+              Width
+              <input id="wInput" type="number" min="32" step="32" value="192" disabled>
+            </label>
+            <label>
+              Height
+              <input id="hInput" type="number" min="32" step="32" value="192" disabled>
+            </label>
+          </div>
+
+          <div class="button-row">
+            <button id="maxBtn" type="button" disabled>Max 32-grid</button>
+            <button id="centerBtn" type="button" disabled>Center</button>
+          </div>
+
+          <div class="quick-section">
+            <div class="panel-title compact">
+              <h2>Quick Sizes</h2>
+              <span>32px steps</span>
+            </div>
+            <div id="quickSizes" class="quick-sizes"></div>
+          </div>
+        </div>
+
+        <div class="panel readout">
+          <div>
+            <span>Image</span>
+            <strong id="currentImageSize">0 x 0 px</strong>
+          </div>
+          <div>
+            <span>Tiles</span>
+            <strong id="tileCount">0 x 0 = 0</strong>
+          </div>
+          <div>
+            <span>Export</span>
+            <strong id="exportSize">0 x 0 px</strong>
+          </div>
+          <div>
+            <span>Output</span>
+            <strong>PNG ZIP</strong>
+          </div>
+        </div>
+      </aside>
+
+      <section id="canvasStage" class="canvas-stage" aria-label="Preview">
+        <div id="emptyState" class="empty-state">
+          <h2>Upload an image to start slicing.</h2>
+          <p>The border snaps to exact 32px tile sizes. Leftover edge pixels are cropped out.</p>
+        </div>
+        <canvas id="previewCanvas" aria-label="Image preview with 32 pixel selection grid"></canvas>
+      </section>
+    </section>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
