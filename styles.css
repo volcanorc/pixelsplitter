@@ -71,6 +71,13 @@ input:disabled {
   padding: 0 0 18px;
 }
 
+.top-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .eyebrow {
   color: var(--accent);
   font-size: 0.78rem;
@@ -358,8 +365,13 @@ canvas.ready {
     flex-direction: column;
   }
 
+  .top-actions,
   .primary-action {
     width: 100%;
+  }
+
+  .top-actions button {
+    flex: 1 1 150px;
   }
 
   .field-grid {

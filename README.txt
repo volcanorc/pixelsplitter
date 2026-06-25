@@ -13,6 +13,7 @@ How to use:
 2. Move or resize the border. Width and height always export in exact 32px steps.
 3. Click Download ZIP to save all 32x32 PNG tiles.
 4. Scroll over the preview to zoom. Hold Space and drag to pan around.
+5. Drag the orange image border to preview a new image size, then click Resize Image to apply it.
 
 For a 209x209 image, the default selection is 192x192, which exports 36 tiles.
 Tiles are named 1.png, 2.png, 3.png, and so on from left to right, top to bottom.
