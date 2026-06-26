@@ -10,12 +10,13 @@ automatically falls back to a built-in Windows PowerShell server.
 
 How to use:
 1. Upload or drag in an image. You can drop it on the upload box or the preview canvas.
-2. Move or resize the border. Width and height always export in exact 32px steps.
-3. Click Download ZIP to save all 32x32 PNG tiles.
-4. Scroll over the preview to zoom. Hold Space and drag to pan around.
-5. When the crop reaches the maximum 32px grid width, the top and bottom border turn yellow.
-6. When the crop reaches the maximum 32px grid height, the left and right border turn yellow.
-7. Green border sides mean that axis can still expand.
+2. Use the Image size slider to scale the working image down proportionally.
+3. Move or resize the border. Width and height always export in exact 32px steps.
+4. Click Download ZIP to save all 32x32 PNG tiles.
+5. Scroll over the preview to zoom. Hold Space and drag to pan around.
+6. When the crop reaches the maximum 32px grid width, the left and right border turn yellow.
+7. When the crop reaches the maximum 32px grid height, the top and bottom border turn yellow.
+8. Green border sides mean that axis can still expand.
 
 For a 209x209 image, the default selection is 192x192, which exports 36 tiles.
 Tiles are named 1.png, 2.png, 3.png, and so on from left to right, top to bottom.

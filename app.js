@@ -9,6 +9,8 @@ const elements = {
   emptyState: document.getElementById("emptyState"),
   imageSize: document.getElementById("imageSize"),
   currentImageSize: document.getElementById("currentImageSize"),
+  imageScaleInput: document.getElementById("imageScaleInput"),
+  imageScaleValue: document.getElementById("imageScaleValue"),
   tileCount: document.getElementById("tileCount"),
   exportSize: document.getElementById("exportSize"),
   downloadBtn: document.getElementById("downloadBtn"),
@@ -26,8 +28,11 @@ const elements = {
 const ctx = elements.canvas.getContext("2d", { willReadFrequently: false });
 
 const state = {
+  originalImage: null,
   image: null,
   imageName: "tiles",
+  minScale: 1,
+  scale: 1,
   imageRect: { x: 0, y: 0, w: 0, h: 0 },
   selection: { x: 0, y: 0, w: 0, h: 0 },
   pointer: null,
@@ -51,6 +56,7 @@ function setControlsEnabled(enabled) {
   elements.downloadBtn.disabled = !enabled;
   elements.maxBtn.disabled = !enabled;
   elements.centerBtn.disabled = !enabled;
+  elements.imageScaleInput.disabled = !enabled;
   Object.values(elements.inputs).forEach((input) => {
     input.disabled = !enabled;
   });
@@ -89,6 +95,9 @@ function syncControls() {
   elements.currentImageSize.textContent = state.image
     ? `${state.image.width} x ${state.image.height} px`
     : "0 x 0 px";
+  elements.imageScaleValue.textContent = state.image
+    ? `${Math.round(state.scale * 100)}%`
+    : "100%";
   elements.tileCount.textContent = `${columns} x ${rows} = ${columns * rows}`;
   elements.exportSize.textContent = `${w} x ${h} px`;
 
@@ -162,6 +171,46 @@ function resizeSurface(preserveImageCenter = true) {
   }
 
   applyCanvasZoom();
+}
+
+function configureImageScaleControl() {
+  if (!state.originalImage) return;
+
+  const shortestSide = Math.min(state.originalImage.width, state.originalImage.height);
+  state.minScale = shortestSide <= TILE ? 1 : TILE / shortestSide;
+  state.scale = 1;
+
+  elements.imageScaleInput.min = String(Number((state.minScale * 100).toFixed(4)));
+  elements.imageScaleInput.max = "100";
+  elements.imageScaleInput.step = "0.1";
+  elements.imageScaleInput.value = "100";
+  elements.imageScaleInput.disabled = state.minScale >= 1;
+  elements.imageScaleValue.textContent = "100%";
+}
+
+function applyImageScaleFromSlider() {
+  if (!state.originalImage) return;
+
+  const percent = Number(elements.imageScaleInput.value);
+  state.scale = clamp(percent / 100, state.minScale, 1);
+  state.image = buildScaledImage(state.scale);
+  resizeSurface(true);
+  buildQuickSizes();
+  setSelection(state.selection);
+}
+
+function buildScaledImage(scale) {
+  if (scale >= 1) return state.originalImage;
+
+  const width = Math.max(TILE, Math.round(state.originalImage.width * scale));
+  const height = Math.max(TILE, Math.round(state.originalImage.height * scale));
+  const scaled = document.createElement("canvas");
+  scaled.width = Math.min(width, state.originalImage.width);
+  scaled.height = Math.min(height, state.originalImage.height);
+  const scaledCtx = scaled.getContext("2d");
+  scaledCtx.imageSmoothingEnabled = false;
+  scaledCtx.drawImage(state.originalImage, 0, 0, scaled.width, scaled.height);
+  return scaled;
 }
 
 function draw() {
@@ -277,17 +326,14 @@ function drawSelectionBorder(x, y, w, h) {
   ctx.save();
   const maxW = Math.floor(getImageWidth() / TILE) * TILE;
   const maxH = Math.floor(getImageHeight() / TILE) * TILE;
-  const horizontalColor = w >= maxW ? "#ffd166" : "#6ee7b7";
-  const verticalColor = h >= maxH ? "#ffd166" : "#6ee7b7";
+  const topBottomColor = h >= maxH ? "#ffd166" : "#6ee7b7";
+  const sideColor = w >= maxW ? "#ffd166" : "#6ee7b7";
 
   ctx.lineWidth = 3;
-  ctx.strokeStyle = horizontalColor;
-  crispLine(x, y, x + w, y);
-  crispLine(x, y + h, x + w, y + h);
-
-  ctx.strokeStyle = verticalColor;
-  crispLine(x, y, x, y + h);
-  crispLine(x + w, y, x + w, y + h);
+  drawBorderLine(topBottomColor, x, y, x + w, y);
+  drawBorderLine(topBottomColor, x, y + h, x + w, y + h);
+  drawBorderLine(sideColor, x, y, x, y + h);
+  drawBorderLine(sideColor, x + w, y, x + w, y + h);
 
   ctx.strokeStyle = "rgba(255, 255, 255, 0.9)";
   ctx.setLineDash([5, 5]);
@@ -302,6 +348,17 @@ function drawSelectionBorder(x, y, w, h) {
     ctx.fillRect(handle.x - 4, handle.y - 4, 8, 8);
     ctx.strokeRect(handle.x - 4, handle.y - 4, 8, 8);
   });
+  ctx.restore();
+}
+
+function drawBorderLine(color, x1, y1, x2, y2) {
+  ctx.save();
+  ctx.strokeStyle = color;
+  if (color === "#ffd166") {
+    ctx.shadowColor = "rgba(255, 209, 102, 0.75)";
+    ctx.shadowBlur = 10;
+  }
+  crispLine(x1, y1, x2, y2);
   ctx.restore();
 }
 
@@ -477,9 +534,11 @@ async function loadFile(file) {
   image.decoding = "async";
   image.onload = () => {
     URL.revokeObjectURL(url);
+    state.originalImage = image;
     state.image = image;
     state.imageName = cleanName(file.name.replace(/\.[^.]+$/, "")) || "tiles";
     state.imageRect = { x: 0, y: 0, w: image.width, h: image.height };
+    configureImageScaleControl();
 
     resizeSurface(false);
     elements.canvas.classList.add("ready");
@@ -489,6 +548,7 @@ async function loadFile(file) {
     const w = Math.floor(image.width / TILE) * TILE;
     const h = Math.floor(image.height / TILE) * TILE;
     setControlsEnabled(w >= TILE && h >= TILE);
+    elements.imageScaleInput.disabled = elements.imageScaleInput.min === elements.imageScaleInput.max;
     buildQuickSizes();
     fitInitialZoom();
     setSelection({ x: 0, y: 0, w, h });
@@ -727,6 +787,7 @@ elements.stage.addEventListener("dragleave", (event) => {
 });
 elements.stage.addEventListener("drop", handleDroppedFile);
 Object.values(elements.inputs).forEach((input) => input.addEventListener("change", onInputChange));
+elements.imageScaleInput.addEventListener("input", applyImageScaleFromSlider);
 elements.maxBtn.addEventListener("click", maxSelection);
 elements.centerBtn.addEventListener("click", centerSelection);
 elements.downloadBtn.addEventListener("click", downloadTiles);

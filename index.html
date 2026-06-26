@@ -66,19 +66,26 @@
         </div>
 
         <div class="panel readout">
-          <div>
+          <div class="readout-line">
             <span>Image</span>
             <strong id="currentImageSize">0 x 0 px</strong>
           </div>
-          <div>
+          <div class="image-scale-control">
+            <label for="imageScaleInput">
+              <span>Image size</span>
+              <strong id="imageScaleValue">100%</strong>
+            </label>
+            <input id="imageScaleInput" type="range" min="100" max="100" step="1" value="100" disabled>
+          </div>
+          <div class="readout-line">
             <span>Tiles</span>
             <strong id="tileCount">0 x 0 = 0</strong>
           </div>
-          <div>
+          <div class="readout-line">
             <span>Export</span>
             <strong id="exportSize">0 x 0 px</strong>
           </div>
-          <div>
+          <div class="readout-line">
             <span>Output</span>
             <strong>PNG ZIP</strong>
           </div>
