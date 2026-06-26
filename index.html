@@ -66,90 +66,30 @@
         </div>
 
         <div class="panel readout glass-readout">
-          <div class="metric-card">
-            <span class="readout-icon icon-image" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M4 5h16v14H4z"></path>
-                <path d="m7 16 4-5 3 4 2-2 3 3"></path>
-                <circle cx="16.5" cy="8.5" r="1.5"></circle>
-              </svg>
-            </span>
+          <div class="metric-card metric-card-with-slider image-scale-control">
             <span class="metric-label">Image</span>
-            <strong id="currentImageSize">0 x 0 px</strong>
-          </div>
-
-          <div class="metric-card slider-card image-scale-control">
-            <span class="readout-icon icon-scale" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M8 4H4v4"></path>
-                <path d="m4 4 6 6"></path>
-                <path d="M16 4h4v4"></path>
-                <path d="m20 4-6 6"></path>
-                <path d="M8 20H4v-4"></path>
-                <path d="m4 20 6-6"></path>
-                <path d="M16 20h4v-4"></path>
-                <path d="m20 20-6-6"></path>
-              </svg>
-            </span>
-            <label for="imageScaleInput" class="metric-label">Image size</label>
-            <strong id="imageScaleValue">100%</strong>
+            <div class="metric-value-group">
+              <strong id="currentImageSize">0 x 0 px</strong>
+              <span id="imageScaleValue" class="metric-subvalue">100%</span>
+            </div>
             <input id="imageScaleInput" type="range" min="100" max="100" step="1" value="100" disabled>
           </div>
 
-          <div class="metric-card">
-            <span class="readout-icon icon-tiles" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M4 4h6v6H4z"></path>
-                <path d="M14 4h6v6h-6z"></path>
-                <path d="M4 14h6v6H4z"></path>
-                <path d="M14 14h6v6h-6z"></path>
-              </svg>
-            </span>
+          <div class="metric-card metric-card-with-slider tile-count-control">
             <span class="metric-label">Tiles</span>
-            <strong id="tileCount">0 x 0 = 0</strong>
-          </div>
-
-          <div class="metric-card slider-card tile-count-control">
-            <span class="readout-icon icon-tile-count" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M5 5h5v5H5z"></path>
-                <path d="M14 5h5v5h-5z"></path>
-                <path d="M5 14h5v5H5z"></path>
-                <path d="M14 14h5v5h-5z"></path>
-                <path d="M3 12h18"></path>
-              </svg>
-            </span>
-            <label for="tileCountInput" class="metric-label">Tile count</label>
-            <strong id="tileCountValue">1x1</strong>
+            <div class="metric-value-group">
+              <strong id="tileCount">0 x 0 = 0</strong>
+              <span id="tileCountValue" class="metric-subvalue">1x1</span>
+            </div>
             <input id="tileCountInput" type="range" min="1" max="1" step="1" value="1" disabled>
           </div>
 
           <div class="metric-card">
-            <span class="readout-icon icon-export" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M8 4H4v4"></path>
-                <path d="M16 4h4v4"></path>
-                <path d="M8 20H4v-4"></path>
-                <path d="M16 20h4v-4"></path>
-                <path d="m7 7 4 4"></path>
-                <path d="m17 7-4 4"></path>
-                <path d="m7 17 4-4"></path>
-                <path d="m17 17-4-4"></path>
-              </svg>
-            </span>
             <span class="metric-label">Export</span>
             <strong id="exportSize">0 x 0 px</strong>
           </div>
 
           <div class="metric-card">
-            <span class="readout-icon icon-output" aria-hidden="true">
-              <svg viewBox="0 0 24 24">
-                <path d="M6 3h8l4 4v14H6z"></path>
-                <path d="M14 3v5h5"></path>
-                <path d="M8 15h8"></path>
-                <path d="M8 18h8"></path>
-              </svg>
-            </span>
             <span class="metric-label">Output</span>
             <strong>PNG ZIP</strong>
           </div>
