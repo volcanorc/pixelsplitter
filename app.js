@@ -12,6 +12,8 @@ const elements = {
   imageScaleInput: document.getElementById("imageScaleInput"),
   imageScaleValue: document.getElementById("imageScaleValue"),
   tileCount: document.getElementById("tileCount"),
+  tileCountInput: document.getElementById("tileCountInput"),
+  tileCountValue: document.getElementById("tileCountValue"),
   exportSize: document.getElementById("exportSize"),
   downloadBtn: document.getElementById("downloadBtn"),
   maxBtn: document.getElementById("maxBtn"),
@@ -57,6 +59,7 @@ function setControlsEnabled(enabled) {
   elements.maxBtn.disabled = !enabled;
   elements.centerBtn.disabled = !enabled;
   elements.imageScaleInput.disabled = !enabled;
+  elements.tileCountInput.disabled = !enabled;
   Object.values(elements.inputs).forEach((input) => {
     input.disabled = !enabled;
   });
@@ -99,6 +102,7 @@ function syncControls() {
     ? `${Math.round(state.scale * 100)}%`
     : "100%";
   elements.tileCount.textContent = `${columns} x ${rows} = ${columns * rows}`;
+  syncTileCountLabel(columns, rows);
   elements.exportSize.textContent = `${w} x ${h} px`;
 
   [...elements.quickSizes.children].forEach((button) => {
@@ -143,6 +147,39 @@ function buildQuickSizes() {
       }));
       elements.quickSizes.appendChild(button);
     });
+}
+
+function getMaxSquareTileCount() {
+  if (!state.image) return 1;
+  return Math.max(1, Math.min(
+    Math.floor(getImageWidth() / TILE),
+    Math.floor(getImageHeight() / TILE)
+  ));
+}
+
+function configureTileCountControl() {
+  const max = getMaxSquareTileCount();
+  elements.tileCountInput.min = "1";
+  elements.tileCountInput.max = String(max);
+  elements.tileCountInput.step = "1";
+  elements.tileCountInput.disabled = !state.image || max < 1;
+}
+
+function syncTileCountLabel(columns, rows) {
+  const value = Math.max(1, Math.min(columns || 1, rows || 1, getMaxSquareTileCount()));
+  elements.tileCountInput.value = String(value);
+  elements.tileCountValue.textContent = `${value}x${value}`;
+}
+
+function applyTileCountFromSlider() {
+  if (!state.image) return;
+
+  const count = clamp(Number(elements.tileCountInput.value), 1, getMaxSquareTileCount());
+  setSelection({
+    ...state.selection,
+    w: count * TILE,
+    h: count * TILE
+  });
 }
 
 function resizeSurface(preserveImageCenter = true) {
@@ -196,6 +233,7 @@ function applyImageScaleFromSlider() {
   state.image = buildScaledImage(state.scale);
   resizeSurface(true);
   buildQuickSizes();
+  configureTileCountControl();
   setSelection(state.selection);
 }
 
@@ -550,6 +588,7 @@ async function loadFile(file) {
     setControlsEnabled(w >= TILE && h >= TILE);
     elements.imageScaleInput.disabled = elements.imageScaleInput.min === elements.imageScaleInput.max;
     buildQuickSizes();
+    configureTileCountControl();
     fitInitialZoom();
     setSelection({ x: 0, y: 0, w, h });
   };
@@ -788,6 +827,7 @@ elements.stage.addEventListener("dragleave", (event) => {
 elements.stage.addEventListener("drop", handleDroppedFile);
 Object.values(elements.inputs).forEach((input) => input.addEventListener("change", onInputChange));
 elements.imageScaleInput.addEventListener("input", applyImageScaleFromSlider);
+elements.tileCountInput.addEventListener("input", applyTileCountFromSlider);
 elements.maxBtn.addEventListener("click", maxSelection);
 elements.centerBtn.addEventListener("click", centerSelection);
 elements.downloadBtn.addEventListener("click", downloadTiles);
